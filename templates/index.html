@@ -2,61 +2,255 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Stress Detector 😌</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧠 Advanced Stress Detector</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <div class="container py-5">
-        <h1 class="text-center mb-4" data-aos="fade-down">🧠 Smart Stress Detector</h1>
-        <p class="text-center text-muted" data-aos="fade-up">
-            Enter your sleep and physiological data to check your next-day stress level.
-        </p>
+    <div class="container-fluid py-4">
+        <!-- Header -->
+        <div class="text-center mb-4" data-aos="fade-down">
+            <h1 class="main-title">
+                <i class="fas fa-brain"></i> Advanced Stress Detector
+            </h1>
+            <p class="subtitle">Multi-Model Machine Learning Analysis</p>
+        </div>
 
-        <div class="row mt-5">
-            <div class="col-md-6" data-aos="fade-right">
-                <div class="card p-4 shadow-lg">
-                    <h4 class="text-center mb-3">Enter Your Details</h4>
-                    <form action="/predict" method="POST">
-                        {% for field in ['snoring','respiration_rate','body_temp','limb_movement','blodd_oxygen','eye_movement','sleep_hours','heart_rate'] %}
-                        <div class="mb-3">
-                            <label class="form-label text-capitalize">{{ field.replace('_',' ') }}</label>
-                            <input type="number" step="any" class="form-control" name="{{ field }}" required>
-                        </div>
-                        {% endfor %}
-                        <button class="btn btn-primary w-100 mt-3">Predict Stress Level</button>
-                    </form>
+        <div class="row g-4">
+            <!-- Input Form Section -->
+            <div class="col-lg-4" data-aos="fade-right">
+                <div class="card input-card shadow-lg">
+                    <div class="card-header">
+                        <h4 class="mb-0"><i class="fas fa-edit"></i> Enter Your Details</h4>
+                    </div>
+                    <div class="card-body">
+                        <form action="/predict" method="POST" id="predictionForm">
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-bed"></i> Snoring Rate
+                                </label>
+                                <input type="number" step="any" class="form-control" name="snoring" 
+                                       placeholder="50-95" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-lungs"></i> Respiration Rate
+                                </label>
+                                <input type="number" step="any" class="form-control" name="respiration_rate" 
+                                       placeholder="15-25" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-thermometer-half"></i> Body Temperature (°F)
+                                </label>
+                                <input type="number" step="any" class="form-control" name="body_temp" 
+                                       placeholder="90-100" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-running"></i> Limb Movement
+                                </label>
+                                <input type="number" step="any" class="form-control" name="limb_movement" 
+                                       placeholder="5-20" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-heartbeat"></i> Blood Oxygen (%)
+                                </label>
+                                <input type="number" step="any" class="form-control" name="blood_oxygen" 
+                                       placeholder="85-100" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-eye"></i> Eye Movement
+                                </label>
+                                <input type="number" step="any" class="form-control" name="eye_movement" 
+                                       placeholder="60-100" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-moon"></i> Sleep Hours
+                                </label>
+                                <input type="number" step="any" class="form-control" name="sleep_hours" 
+                                       placeholder="1-9" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-heart"></i> Heart Rate (BPM)
+                                </label>
+                                <input type="number" step="any" class="form-control" name="heart_rate" 
+                                       placeholder="50-80" required>
+                            </div>
+                            <button type="submit" class="btn btn-predict w-100">
+                                <i class="fas fa-chart-line"></i> Predict Stress Level
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Model Accuracy Info Card -->
+                <div class="card accuracy-info-card mt-4 shadow-lg" data-aos="zoom-in">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Model Accuracies</h5>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="text-primary">Stage 1 (Binary Classification)</h6>
+                        {% if accuracies_stage1 %}
+                            {% for model, acc in accuracies_stage1.items() %}
+                            <div class="accuracy-item">
+                                <span class="model-name">{{ model }}</span>
+                                <span class="accuracy-badge">{{ "%.2f"|format(acc * 100) }}%</span>
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+                        <hr>
+                        <h6 class="text-primary">Stage 2 (Stress Level Classification)</h6>
+                        {% if accuracies_stage2 %}
+                            {% for model, acc in accuracies_stage2.items() %}
+                            <div class="accuracy-item">
+                                <span class="model-name">{{ model }}</span>
+                                <span class="accuracy-badge">{{ "%.2f"|format(acc * 100) }}%</span>
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
                 </div>
             </div>
 
-            <div class="col-md-6" data-aos="fade-left">
-                <div class="card p-4 shadow-lg text-center">
-                    <h4>Result</h4>
-                    {% if result %}
-                        <p class="mt-4 result-text">{{ result }}</p>
-                    {% else %}
-                        <p class="mt-4 text-muted">Your result will appear here after prediction.</p>
-                    {% endif %}
+            <!-- Results Section -->
+            <div class="col-lg-8" data-aos="fade-left">
+                {% if error %}
+                <div class="alert alert-danger" role="alert">
+                    <i class="fas fa-exclamation-triangle"></i> Error: {{ error }}
+                </div>
+                {% endif %}
+
+                {% if results %}
+                <div class="results-header mb-4">
+                    <h3><i class="fas fa-clipboard-list"></i> Prediction Results</h3>
+                    <p class="text-muted">Results from all machine learning models</p>
                 </div>
 
-                <div class="info-card mt-4 p-4 shadow-sm" data-aos="zoom-in">
-                    <h5>💡 How It Works</h5>
-                    <p>The system uses a trained machine learning model to analyze your sleep indicators such as snoring, eye movement, and body temperature to predict your next-day stress.</p>
-                    <h6 class="mt-3">🧩 Stress Levels:</h6>
-                    <ul>
-                        <li>0 - Low / Normal</li>
-                        <li>1 - Medium Low</li>
-                        <li>2 - Medium</li>
-                        <li>3 - Medium High</li>
-                        <li>4 - High Stress</li>
-                    </ul>
+                <div class="row g-4">
+                    {% for result in results %}
+                    <div class="col-md-6">
+                        <div class="card result-card shadow-lg h-100" data-aos="zoom-in" data-aos-delay="{{ loop.index0 * 100 }}">
+                            <div class="card-header model-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-robot"></i> {{ result.model }}
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="prediction-result">
+                                    <div class="result-text {% if result.level == 0 %}not-stressed{% else %}stressed{% endif %}">
+                                        {{ result.result }}
+                                    </div>
+                                </div>
+                                
+                                <div class="accuracy-section mt-3">
+                                    <div class="accuracy-row">
+                                        <span class="accuracy-label">
+                                            <i class="fas fa-check-circle"></i> Stage 1 Accuracy:
+                                        </span>
+                                        <span class="accuracy-value">
+                                            {{ "%.2f"|format(result.accuracy_stage1 * 100) }}%
+                                        </span>
+                                    </div>
+                                    {% if result.accuracy_stage2 %}
+                                    <div class="accuracy-row">
+                                        <span class="accuracy-label">
+                                            <i class="fas fa-check-circle"></i> Stage 2 Accuracy:
+                                        </span>
+                                        <span class="accuracy-value">
+                                            {{ "%.2f"|format(result.accuracy_stage2 * 100) }}%
+                                        </span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Stress Level Indicator -->
+                                {% if result.level > 0 %}
+                                <div class="stress-level-indicator mt-3">
+                                    <div class="progress" style="height: 25px;">
+                                        <div class="progress-bar 
+                                            {% if result.level == 1 %}bg-warning
+                                            {% elif result.level == 2 %}bg-info
+                                            {% elif result.level == 3 %}bg-orange
+                                            {% else %}bg-danger{% endif %}" 
+                                            role="progressbar" 
+                                            style="width: {{ result.level * 25 }}%"
+                                            aria-valuenow="{{ result.level }}" 
+                                            aria-valuemin="0" 
+                                            aria-valuemax="4">
+                                            Level {{ result.level }}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="card welcome-card shadow-lg text-center">
+                    <div class="card-body py-5">
+                        <i class="fas fa-clipboard-check fa-4x text-primary mb-3"></i>
+                        <h4>Ready to Predict</h4>
+                        <p class="text-muted">Fill in the form on the left and click "Predict Stress Level" to see results from all machine learning models.</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Info Card -->
+                <div class="card info-card mt-4 shadow-lg" data-aos="zoom-in">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-info-circle"></i> How It Works</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>This system uses <strong>four different machine learning algorithms</strong> to analyze your sleep and physiological data:</p>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <ul class="model-list">
+                                    <li><strong>Logistic Regression:</strong> Linear classification model</li>
+                                    <li><strong>Decision Tree:</strong> Tree-based decision model</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <ul class="model-list">
+                                    <li><strong>Naive Bayes:</strong> Probabilistic classifier</li>
+                                    <li><strong>Random Forest:</strong> Ensemble of decision trees</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <hr>
+                        <h6 class="mt-3"><i class="fas fa-layer-group"></i> Two-Stage Prediction:</h6>
+                        <ol>
+                            <li><strong>Stage 1:</strong> Determines if you're stressed (Binary Classification)</li>
+                            <li><strong>Stage 2:</strong> If stressed, classifies your stress level (1-4)</li>
+                        </ol>
+                        <h6 class="mt-3"><i class="fas fa-signal"></i> Stress Levels:</h6>
+                        <ul class="stress-levels">
+                            <li><span class="badge bg-success">0</span> Low / Normal (No stress)</li>
+                            <li><span class="badge bg-warning">1</span> Medium Low</li>
+                            <li><span class="badge bg-info">2</span> Medium</li>
+                            <li><span class="badge bg-orange">3</span> Medium High</li>
+                            <li><span class="badge bg-danger">4</span> High Stress</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <script>AOS.init({ duration: 1000 });</script>
+    <script>
+        AOS.init({ duration: 800, once: true });
+    </script>
 </body>
 </html>
